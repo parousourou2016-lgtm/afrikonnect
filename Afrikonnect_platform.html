@@ -86,7 +86,7 @@ select.inp{cursor:pointer}
 #nav{background:var(--navy);position:sticky;top:0;z-index:500;border-bottom:1px solid rgba(201,162,39,.18)}
 .nav-inner{max-width:1320px;margin:0 auto;padding:0 20px;display:flex;align-items:center;gap:8px;height:72px}
 .nav-logo{cursor:pointer;flex-shrink:0}
-.nav-logo img{height:58px;width:auto}
+.nav-logo img{height:70px;width:auto}
 .nav-srch{flex:1;max-width:480px;margin:0 12px;position:relative}
 .nav-srch input{width:100%;padding:10px 56px 10px 40px;border:1.5px solid rgba(201,162,39,.28);border-radius:30px;background:rgba(255,255,255,.08);color:#fff;font-family:inherit;font-size:.84rem;outline:none;transition:all .2s}
 .nav-srch input::placeholder{color:rgba(255,255,255,.33)}
@@ -363,7 +363,7 @@ body{font-family:"Plus Jakarta Sans",sans-serif;background:linear-gradient(180de
 .inp:focus{border-color:#f3a847;box-shadow:0 0 0 3px rgba(243,168,71,.24)}
 #nav{background:linear-gradient(180deg,#131921,#1b2633);border-bottom:none;box-shadow:0 2px 8px rgba(15,17,17,.18)}
 .nav-inner{height:74px;gap:14px}
-.nav-logo img{height:48px}
+.nav-logo img{height:64px}
 .nav-srch{max-width:none;margin:0;flex:1.2}
 .nav-srch input{padding:12px 70px 12px 18px;border-radius:10px;background:#fff;color:#111;border:2px solid transparent;font-size:.92rem}
 .nav-srch input::placeholder{color:#6b7280}
@@ -749,7 +749,7 @@ footer{background:#131a22;border-top:none}
   <footer>
     <div class="ctr">
       <div class="footer-g">
-        <div><img id="footer-logo" src="" alt="Afrikonnect" style="height:44px"/><p class="footer-tl">The African Diaspora Marketplace &mdash; connecting African businesses and customers across all 50 U.S. states.</p></div>
+        <div><img id="footer-logo" src="" alt="Afrikonnect" style="height:64px"/><p class="footer-tl">The African Diaspora Marketplace &mdash; connecting African businesses and customers across all 50 U.S. states.</p></div>
         <div class="footer-col"><h5>Discover</h5><ul><li><a onclick="navTo(&#39;vendors&#39;)">Browse Businesses</a></li><li><a onclick="navTo(&#39;events&#39;)">Events</a></li><li><a onclick="openAuth(&#39;register&#39;)">Create Account</a></li></ul></div>
         <div class="footer-col"><h5>For Business</h5><ul><li><a onclick="openAuth(&#39;business&#39;)">List for Free</a></li><li><a>Premium Ads</a></li><li><a>DoorDash Delivery</a></li></ul></div>
         <div class="footer-col"><h5>Support</h5><ul><li><a>Help Center</a></li><li><a>Contact Us</a></li><li><a>Privacy Policy</a></li><li><a>Terms of Service</a></li></ul></div>
@@ -1285,7 +1285,7 @@ async function openEvtModal(id){
   <div style="font-family:'Cormorant Garamond',serif;font-size:1.5rem;font-weight:700;color:var(--navy);margin-bottom:8px">${e.title}</div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:14px"><div style="background:var(--off);border-radius:var(--r);padding:11px"><div style="font-size:.63rem;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px">Date</div><div style="font-size:.84rem;font-weight:600;color:var(--navy)">${e.event_date?new Date(e.event_date).toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'}):'TBA'}</div></div><div style="background:var(--off);border-radius:var(--r);padding:11px"><div style="font-size:.63rem;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px">Time</div><div style="font-size:.84rem;font-weight:600;color:var(--navy)">${e.event_time||'TBA'}</div></div><div style="background:var(--off);border-radius:var(--r);padding:11px;grid-column:1/-1"><div style="font-size:.63rem;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px">Venue</div><div style="font-size:.84rem;font-weight:600;color:var(--navy)">${e.venue||''}, ${e.city||''}, ${e.state||''}</div></div></div>
   ${e.description?`<div style="font-size:.84rem;color:var(--mid);line-height:1.65;margin-bottom:16px">${e.description}</div>`:''}
-  <div style="background:linear-gradient(135deg,var(--navy),var(--navy3));border-radius:var(--rl);padding:18px;text-align:center"><div style="font-size:.68rem;color:rgba(255,255,255,.42);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px">${isPaid?'Ticket Price':'Admission'}</div><div style="font-family:'Cormorant Garamond',serif;font-size:2.2rem;font-weight:700;color:${isPaid?'var(--gold2)':'#22C55E'}">${isPaid?'$'+parseFloat(e.ticket_price).toFixed(2):'FREE'}</div><div style="font-size:.72rem;color:rgba(255,255,255,.34);margin-bottom:12px">${owner?'Manage check-in and ticket validation here':isPaid?'Per ticket. QR ticket generated after payment':'Free entry &mdash; RSVP to confirm your spot'}</div><div style="display:grid;grid-template-columns:1fr${owner?' 1fr':''};gap:10px">${owner?`<button class="btn btn-outline-gold btn-full" onclick="openEventCheckin('${e.id}')">Check In Guests</button>`:''}<button class="btn btn-gold btn-full" onclick="bookEvt('${e.id}',${isPaid})">${owner?'Open Check-In':isPaid?'Purchase Ticket':'RSVP Now'}</button></div></div>`;
+  <div style="background:linear-gradient(135deg,var(--navy),var(--navy3));border-radius:var(--rl);padding:18px;text-align:center"><div style="font-size:.68rem;color:rgba(255,255,255,.42);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px">${isPaid?'Ticket Price':'Admission'}</div><div style="font-family:'Cormorant Garamond',serif;font-size:2.2rem;font-weight:700;color:${isPaid?'var(--gold2)':'#22C55E'}">${isPaid?'$'+parseFloat(e.ticket_price).toFixed(2):'FREE'}</div><div style="font-size:.72rem;color:rgba(255,255,255,.34);margin-bottom:12px">${owner?'Manage check-in and ticket validation here':isPaid?'Add tickets to cart, then pay through checkout':'Free entry &mdash; RSVP to confirm your spot'}</div><div style="display:grid;grid-template-columns:1fr${owner?' 1fr':''};gap:10px">${owner?`<button class="btn btn-outline-gold btn-full" onclick="openEventCheckin('${e.id}')">Check In Guests</button>`:''}<button class="btn btn-gold btn-full" onclick="bookEvt('${e.id}',${isPaid})">${owner?'Open Check-In':isPaid?'Add Ticket to Cart':'RSVP Now'}</button></div></div>`;
   document.getElementById('gen-overlay').classList.add('open');
 }
 async function bookEvt(id,isPaid){
@@ -1293,10 +1293,18 @@ async function bookEvt(id,isPaid){
   const evt=allEvts.find(x=>x.id===id);
   if(!evt)return;
   if(isEventOwner(evt)){openEventCheckin(id);return;}
-  if(isPaid){openEventCheckout(id);return;}
+  if(isPaid){addEventTicketToCart(id);closeGenModal();navTo('cart');showToast('Ticket added to cart. Complete payment at checkout.');return;}
   const{error}=await db.from('event_rsvps').upsert({event_id:id,user_id:cUser.id},{onConflict:'event_id,user_id'});
   if(error){showToast('Error: '+normalizeDbError(error));return;}
   closeGenModal();showToast('RSVP confirmed! See you there!');
+}
+function addEventTicketToCart(eventId){
+  const evt=allEvts.find(x=>x.id===eventId);if(!evt)return;
+  const id='event-ticket-'+eventId;
+  const item={id,type:'event_ticket',event_id:eventId,name:evt.title+' Ticket',price:parseFloat(evt.ticket_price||0),emoji:'&#x1F39F;',event_title:evt.title,event_date:evt.event_date,event_time:evt.event_time,venue:evt.venue,city:evt.city,state:evt.state};
+  if(cart[id])cart[id].qty++;
+  else cart[id]={item,qty:1,bizId:'event:'+eventId,bizName:evt.title};
+  updateDot();
 }
 
 function openEventCheckout(id){
@@ -1458,10 +1466,10 @@ function renderCart(){
   if(!entries.length){emp.classList.remove('hidden');fil.classList.add('hidden');return;}
   emp.classList.add('hidden');fil.classList.remove('hidden');
   const groups={};entries.forEach(c=>{if(!groups[c.bizId])groups[c.bizId]=[];groups[c.bizId].push(c);});
-  let html='';Object.entries(groups).forEach(([bid,items])=>{const b=allBiz.find(x=>x.id===bid);html+=`<div style="font-size:.68rem;font-weight:800;color:var(--gold);font-family:monospace;text-transform:uppercase;letter-spacing:.1em;margin-bottom:9px">${b?.banner_emoji||CE[b?.category]||'&#x1F3EA;'} ${items[0].bizName}</div>`;items.forEach(c=>{html+=`<div class="cart-item"><div style="font-size:1.5rem;width:38px;text-align:center">${c.item.emoji||'&#x1F37D;'}</div><div style="flex:1"><div style="font-weight:700;font-size:.85rem;color:var(--navy)">${c.item.name}</div><div style="color:var(--gold);font-weight:700;font-size:.84rem">$${(parseFloat(c.item.price)*c.qty).toFixed(2)}</div></div><div class="qty-ctl"><button class="qb" onclick="ccqty('${c.item.id}',-1)">&#x2212;</button><span style="font-weight:700;font-size:.85rem;min-width:18px;text-align:center">${c.qty}</span><button class="qb plus" onclick="ccqty('${c.item.id}',1)">+</button></div></div>`;});});
+  let html='';Object.entries(groups).forEach(([bid,items])=>{const b=allBiz.find(x=>x.id===bid),isEvent=bid.startsWith('event:'),hdrIcon=isEvent?'&#x1F39F;':(b?.banner_emoji||CE[b?.category]||'&#x1F3EA;');html+=`<div style="font-size:.68rem;font-weight:800;color:var(--gold);font-family:monospace;text-transform:uppercase;letter-spacing:.1em;margin-bottom:9px">${hdrIcon} ${items[0].bizName}</div>`;items.forEach(c=>{html+=`<div class="cart-item"><div style="font-size:1.5rem;width:38px;text-align:center">${c.item.emoji||'&#x1F37D;'}</div><div style="flex:1"><div style="font-weight:700;font-size:.85rem;color:var(--navy)">${c.item.name}</div><div style="color:var(--gold);font-weight:700;font-size:.84rem">$${(parseFloat(c.item.price)*c.qty).toFixed(2)}</div>${c.item.type==='event_ticket'?`<div style="font-size:.72rem;color:var(--soft);margin-top:4px">${c.item.event_date?new Date(c.item.event_date).toLocaleDateString():'TBA'} ${c.item.event_time||''} · ${c.item.venue||''}, ${c.item.city||''}</div>`:''}</div><div class="qty-ctl"><button class="qb" onclick="ccqty('${c.item.id}',-1)">&#x2212;</button><span style="font-weight:700;font-size:.85rem;min-width:18px;text-align:center">${c.qty}</span><button class="qb plus" onclick="ccqty('${c.item.id}',1)">+</button></div></div>`;});});
   document.getElementById('cart-items-list').innerHTML=html;
   const{sub,commission,cardFee,total,dd}=cartTotals();
-  document.getElementById('cart-sum-rows').innerHTML=`<div class="sum-row"><span>Subtotal</span><span style="font-weight:600">$${sub.toFixed(2)}</span></div><div class="sum-row"><span>Afrikonnect commission (3%)</span><span style="font-weight:600">$${commission.toFixed(2)}</span></div><div class="sum-row"><span>Credit or debit card processing</span><span style="font-weight:600">$${cardFee.toFixed(2)}</span></div>${dd?`<div class="sum-row"><span>&#x1F697; DoorDash delivery</span><span style="font-weight:600">$${dd.toFixed(2)}</span></div>`:''}<div class="sum-row"><span>Payment security</span><span style="font-weight:600">Encrypted in-app</span></div>`;
+  document.getElementById('cart-sum-rows').innerHTML=`<div class="sum-row"><span>Subtotal</span><span style="font-weight:600">$${sub.toFixed(2)}</span></div><div class="sum-row"><span>Afrikonnect service fee (3%)</span><span style="font-weight:600">$${commission.toFixed(2)}</span></div><div class="sum-row"><span>Credit or debit card processing</span><span style="font-weight:600">$${cardFee.toFixed(2)}</span></div>${dd?`<div class="sum-row"><span>&#x1F697; DoorDash delivery</span><span style="font-weight:600">$${dd.toFixed(2)}</span></div>`:''}<div class="sum-row"><span>Payment security</span><span style="font-weight:600">Encrypted in-app</span></div>`;
   document.getElementById('cart-total').textContent='$'+total.toFixed(2);document.getElementById('cart-total-btn').textContent='$'+total.toFixed(2);
 }
 function ccqty(id,delta){if(!cart[id])return;cart[id].qty+=delta;if(cart[id].qty<=0)delete cart[id];updateDot();renderCart();}
@@ -1475,9 +1483,21 @@ async function placeOrder(){
   if(payM==='card'||payM==='debit'){const num=document.getElementById('card-num')?.value?.replace(/\s/g,''),exp=document.getElementById('card-exp')?.value,cvv=document.getElementById('card-cvv')?.value,name=document.getElementById('card-name')?.value?.trim();if(!num||num.length<15||!exp||!cvv||!name){showToast('Please fill in all card details');return;}}
   const btn=document.getElementById('checkout-btn');btn.innerHTML='<span class="spin"></span> Processing...';btn.disabled=true;
   try{
-    const groups={};entries.forEach(c=>{if(!groups[c.bizId])groups[c.bizId]=[];groups[c.bizId].push(c);});
+    const groups={};let hasEventTickets=false;entries.forEach(c=>{if(!groups[c.bizId])groups[c.bizId]=[];groups[c.bizId].push(c);});
     for(const[bizId,items]of Object.entries(groups)){
-      const sub=items.reduce((s,c)=>s+parseFloat(c.item.price)*c.qty,0),comm=sub*0.03,cFee=(sub+comm+0.30)/(1-0.029)-(sub+comm),ddFee=canUseDeliveryForBusiness(bizId)?6.99:0,total=sub+comm+cFee+ddFee,vendorPayout=sub;
+      const sub=items.reduce((s,c)=>s+parseFloat(c.item.price)*c.qty,0),comm=sub*0.03,cFee=(sub+comm+0.30)/(1-0.029)-(sub+comm),isEvent=items[0]?.item?.type==='event_ticket';
+      if(isEvent){
+        hasEventTickets=true;
+        const ticketItem=items[0].item,total=sub+comm+cFee;
+        const{data:order,error}=await db.from('event_ticket_orders').insert({event_id:ticketItem.event_id,customer_id:cUser.id,quantity:items[0].qty,subtotal:sub,service_fee:comm,card_processing_fee:cFee,total,payment_method:payM,delivery_channel:'email',delivery_destination:cUser.email,status:'paid'}).select().single();
+        if(error)throw error;
+        const tickets=Array.from({length:items[0].qty},(_,i)=>{const token=makeTicketToken();return{order_id:order.id,event_id:ticketItem.event_id,customer_id:cUser.id,ticket_token:token,qr_payload:buildTicketPayload(token),qr_url:buildTicketQrUrl(token),status:'active',delivery_channel:'email',delivery_destination:cUser.email,sequence_number:i+1};});
+        const{data:created,error:ticketError}=await db.from('event_tickets').insert(tickets).select();
+        if(ticketError)throw ticketError;
+        eventTicketCache=[...(eventTicketCache||[]),...(created||tickets)];
+        continue;
+      }
+      const ddFee=canUseDeliveryForBusiness(bizId)?6.99:0,total=sub+comm+cFee+ddFee,vendorPayout=sub;
       const{data:order,error}=await db.from('orders').insert({customer_id:cUser.id,business_id:bizId,status:'confirmed',subtotal:sub,commission_fee:comm,card_processing_fee:cFee,doordash_fee:ddFee,total,payment_method:payM,payout_status:'pending_receipt',vendor_payout_amount:vendorPayout}).select().single();
       if(error)throw error;
       await db.from('order_items').insert(items.map(c=>({order_id:order.id,menu_item_id:c.item.id,name:c.item.name,price:parseFloat(c.item.price),quantity:c.qty,subtotal:parseFloat(c.item.price)*c.qty})));
@@ -1485,7 +1505,7 @@ async function placeOrder(){
       await db.from('africoins_ledger').insert({user_id:cUser.id,amount:coins,reason:'Order #'+order.id.slice(0,8).toUpperCase()}).catch(()=>{});
       await db.from('profiles').update({africoins:(cProf?.africoins||0)+coins}).eq('id',cUser.id).catch(()=>{});
     }
-    cart={};ddOn=false;updateDot();renderCart();await loadProf();showToast('Order placed! Thank you!');navTo('account');setTimeout(()=>custTab(document.querySelectorAll('.dtab')[1],'ct-orders'),500);loadCustOrders();
+    cart={};ddOn=false;updateDot();renderCart();await loadProf();showToast('Order placed! Thank you!');if(hasEventTickets){openTicketWallet();navTo('events');}else{navTo('account');setTimeout(()=>custTab(document.querySelectorAll('.dtab')[1],'ct-orders'),500);loadCustOrders();}
   }catch(err){showToast('Error: '+err.message);}
   finally{btn.innerHTML='Place Order &middot; <span id="cart-total-btn">$0.00</span>';btn.disabled=false;}
 }
