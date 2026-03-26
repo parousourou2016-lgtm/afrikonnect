@@ -804,7 +804,10 @@ footer{background:#131a22;border-top:none}
           <h1 style="font-family:&#39;Cormorant Garamond&#39;,serif;font-size:2.8rem;font-weight:700;color:#fff;margin-bottom:8px">African <em style="color:var(--gold2);font-style:italic">Events</em></h1>
           <p style="color:rgba(255,255,255,.4);font-size:.9rem">Music, culture, food, business and community events near you</p>
         </div>
-        <button class="btn btn-gold btn-lg" onclick="openPostEvt()">+ Post an Event</button>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-outline-gold btn-lg" onclick="openTicketWallet()">My Tickets</button>
+          <button class="btn btn-gold btn-lg" onclick="openPostEvt()">+ Post an Event</button>
+        </div>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:28px">
         <button class="chip on" style="background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.2);color:#fff" onclick="filterEvts(this,&#39;&#39;)">All</button>
@@ -884,6 +887,7 @@ footer{background:#131a22;border-top:none}
             <div style="background:rgba(201,162,39,.15);border:1px solid rgba(201,162,39,.25);border-radius:12px;padding:12px 16px"><div style="font-size:.65rem;font-family:monospace;text-transform:uppercase;letter-spacing:.1em;color:rgba(201,162,39,.6);margin-bottom:3px">AfriCoins Balance</div><div style="font-family:&#39;Cormorant Garamond&#39;,serif;font-size:2rem;font-weight:700;color:var(--gold2)" id="prof-coins">0</div></div>
           </div>
           <div>
+            <div class="ml" onclick="openTicketWallet()"><div class="ml-ico">&#x1F39F;</div><div><div style="font-weight:700;font-size:.84rem;color:var(--navy)">My Tickets</div><div style="font-size:.7rem;color:var(--soft)">Open QR tickets and resend them</div></div><span style="color:var(--gold);margin-left:auto;font-weight:700">&#x203A;</span></div>
             <div class="ml" onclick="custTab(document.querySelectorAll(&#39;.dtab&#39;)[1],&#39;ct-orders&#39;)"><div class="ml-ico">&#x1F4E6;</div><div><div style="font-weight:700;font-size:.84rem;color:var(--navy)">My Orders</div><div style="font-size:.7rem;color:var(--soft)">View order history</div></div><span style="color:var(--gold);margin-left:auto;font-weight:700">&#x203A;</span></div>
             <div class="ml" onclick="custTab(document.querySelectorAll(&#39;.dtab&#39;)[2],&#39;ct-msgs&#39;)"><div class="ml-ico">&#x1F4AC;</div><div><div style="font-weight:700;font-size:.84rem;color:var(--navy)">Messages</div><div style="font-size:.7rem;color:var(--soft)">Chat with vendors</div></div><span style="color:var(--gold);margin-left:auto;font-weight:700">&#x203A;</span></div>
             <button class="btn btn-outline btn-full" style="margin-top:8px" onclick="doLogout()">Sign Out</button>
@@ -1023,7 +1027,7 @@ footer{background:#131a22;border-top:none}
 <script>
 const SB='https://mmmucgkfmddgiigcksxq.supabase.co',SK='sb_publishable_fYJifr-922wyvBUT1I0Inw_hVUne5NE';
 const db=supabase.createClient(SB,SK);
-let cUser=null,cProf=null,cBiz=null,allBiz=[],allEvts=[],cart={},sMode='city',ddOn=false,payM='card',selSt=0,aThr=null,delOn=false,storeOn=true;
+let cUser=null,cProf=null,cBiz=null,allBiz=[],allEvts=[],cart={},sMode='city',ddOn=false,payM='card',selSt=0,aThr=null,delOn=false,storeOn=true,eventTicketCache=[],ticketScannerStream=null,ticketScannerActive=false,ticketScannerDetector=null,ticketScanEventId=null;
 const PHR=/\b(\+?1?[-.\s]?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4})\b/g;
 const EMR=/\b[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}\b/g;
 const STATES=["Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado", "Connecticut", "Delaware", "Florida", "Georgia", "Hawaii", "Idaho", "Illinois", "Indiana", "Iowa", "Kansas", "Kentucky", "Louisiana", "Maine", "Maryland", "Massachusetts", "Michigan", "Minnesota", "Mississippi", "Missouri", "Montana", "Nebraska", "Nevada", "New Hampshire", "New Jersey", "New Mexico", "New York", "North Carolina", "North Dakota", "Ohio", "Oklahoma", "Oregon", "Pennsylvania", "Rhode Island", "South Carolina", "South Dakota", "Tennessee", "Texas", "Utah", "Vermont", "Virginia", "Washington", "West Virginia", "Wisconsin", "Wyoming", "Washington DC"];
@@ -1078,8 +1082,20 @@ function normalizeDbError(err){
   if(!raw)return 'Something went wrong. Please try again.';
   if(msg.includes('could not find the')&&msg.includes('event_time')&&msg.includes('events'))return 'Your Supabase events table is missing the event_time column. Run 5_events_schema_repair.sql in Supabase SQL Editor, then try again.';
   if(msg.includes('organizer_id')&&msg.includes('events')&&msg.includes('not-null'))return 'Your Supabase events table still requires organizer_id. Run 6_events_organizer_repair.sql in Supabase SQL Editor, then try again.';
+  if((msg.includes('event_ticket_orders')||msg.includes('event_tickets'))&&(msg.includes('does not exist')||msg.includes('schema cache')))return 'Your event ticket tables are missing. Run 7_event_ticketing_schema.sql in Supabase SQL Editor, then try again.';
   return raw;
 }
+function money(v){return '$'+parseFloat(v||0).toFixed(2);}
+function eventFeeTotals(price,qty){
+  const subtotal=(parseFloat(price)||0)*(parseInt(qty,10)||1),serviceFee=subtotal*0.03,cardFee=subtotal?((subtotal+serviceFee+0.30)/(1-0.029)-(subtotal+serviceFee)):0;
+  return{subtotal,serviceFee,cardFee,total:subtotal+serviceFee+cardFee};
+}
+function buildTicketPayload(token){return 'AFRIKONNECT-TICKET:'+token;}
+function buildTicketQrUrl(token){return 'https://api.qrserver.com/v1/create-qr-code/?size=320x320&margin=8&data='+encodeURIComponent(buildTicketPayload(token));}
+function makeTicketToken(){return (crypto.randomUUID?crypto.randomUUID():('tk-'+Date.now()+'-'+Math.random().toString(36).slice(2,10))).replace(/-/g,'').toUpperCase();}
+function extractTicketToken(raw){return (raw||'').toString().trim().replace(/^AFRIKONNECT-TICKET:/i,'').trim().toUpperCase();}
+function ticketStatusLabel(t){return t?.consumed_at?'Used':t?.status==='cancelled'?'Cancelled':t?.status==='refunded'?'Refunded':'Active';}
+function isEventOwner(evt){return !!(cUser&&evt&&(evt.host_id===cUser.id||evt.organizer_id===cUser.id));}
 async function ensureAccountSetup(){
   if(acctSetupPromise)return acctSetupPromise;
   acctSetupPromise=(async()=>{
@@ -1264,15 +1280,152 @@ function filterEvts(btn,cat){renderEvts(cat?allEvts.filter(e=>e.category===cat):
 async function openEvtModal(id){
   if(!cUser){openAuth('login');return;}
   const e=allEvts.find(x=>x.id===id);if(!e)return;
-  const isPaid=e.ticket_price>0;const ico=e.category==='music'?'&#x1F3B5;':e.category==='food'?'&#x1F372;':'&#x1F389;';
+  const isPaid=e.ticket_price>0,owner=isEventOwner(e);const ico=e.category==='music'?'&#x1F3B5;':e.category==='food'?'&#x1F372;':'&#x1F389;';
   document.getElementById('gen-content').innerHTML=`<div style="margin:-36px -36px 20px;height:200px;background:linear-gradient(135deg,var(--navy),var(--navy3));border-radius:22px 22px 0 0;display:flex;align-items:center;justify-content:center;font-size:5rem;position:relative;overflow:hidden">${e.flyer_url?`<img src="${e.flyer_url}" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0"/>`:''}<span style="position:relative;z-index:1">${ico}</span>${e.is_featured?'<div class="evt-feat" style="position:absolute;top:14px;left:14px">&#x2B50; FEATURED</div>':''}</div>
   <div style="font-family:'Cormorant Garamond',serif;font-size:1.5rem;font-weight:700;color:var(--navy);margin-bottom:8px">${e.title}</div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:14px"><div style="background:var(--off);border-radius:var(--r);padding:11px"><div style="font-size:.63rem;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px">Date</div><div style="font-size:.84rem;font-weight:600;color:var(--navy)">${e.event_date?new Date(e.event_date).toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'}):'TBA'}</div></div><div style="background:var(--off);border-radius:var(--r);padding:11px"><div style="font-size:.63rem;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px">Time</div><div style="font-size:.84rem;font-weight:600;color:var(--navy)">${e.event_time||'TBA'}</div></div><div style="background:var(--off);border-radius:var(--r);padding:11px;grid-column:1/-1"><div style="font-size:.63rem;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px">Venue</div><div style="font-size:.84rem;font-weight:600;color:var(--navy)">${e.venue||''}, ${e.city||''}, ${e.state||''}</div></div></div>
   ${e.description?`<div style="font-size:.84rem;color:var(--mid);line-height:1.65;margin-bottom:16px">${e.description}</div>`:''}
-  <div style="background:linear-gradient(135deg,var(--navy),var(--navy3));border-radius:var(--rl);padding:18px;text-align:center"><div style="font-size:.68rem;color:rgba(255,255,255,.42);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px">${isPaid?'Ticket Price':'Admission'}</div><div style="font-family:'Cormorant Garamond',serif;font-size:2.2rem;font-weight:700;color:${isPaid?'var(--gold2)':'#22C55E'}">${isPaid?'$'+parseFloat(e.ticket_price).toFixed(2):'FREE'}</div><div style="font-size:.72rem;color:rgba(255,255,255,.34);margin-bottom:12px">${isPaid?'Per ticket':'Free entry &mdash; RSVP to confirm your spot'}</div><button class="btn btn-gold btn-full" onclick="bookEvt('${e.id}',${isPaid})">${isPaid?'Purchase Ticket':'RSVP Now'}</button></div>`;
+  <div style="background:linear-gradient(135deg,var(--navy),var(--navy3));border-radius:var(--rl);padding:18px;text-align:center"><div style="font-size:.68rem;color:rgba(255,255,255,.42);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px">${isPaid?'Ticket Price':'Admission'}</div><div style="font-family:'Cormorant Garamond',serif;font-size:2.2rem;font-weight:700;color:${isPaid?'var(--gold2)':'#22C55E'}">${isPaid?'$'+parseFloat(e.ticket_price).toFixed(2):'FREE'}</div><div style="font-size:.72rem;color:rgba(255,255,255,.34);margin-bottom:12px">${owner?'Manage check-in and ticket validation here':isPaid?'Per ticket. QR ticket generated after payment':'Free entry &mdash; RSVP to confirm your spot'}</div><div style="display:grid;grid-template-columns:1fr${owner?' 1fr':''};gap:10px">${owner?`<button class="btn btn-outline-gold btn-full" onclick="openEventCheckin('${e.id}')">Check In Guests</button>`:''}<button class="btn btn-gold btn-full" onclick="bookEvt('${e.id}',${isPaid})">${owner?'Open Check-In':isPaid?'Purchase Ticket':'RSVP Now'}</button></div></div>`;
   document.getElementById('gen-overlay').classList.add('open');
 }
-async function bookEvt(id,isPaid){if(!cUser){openAuth('login');return;}if(isPaid){showToast('Redirecting to secure checkout...');setTimeout(()=>closeGenModal(),2000);}else{await db.from('event_rsvps').upsert({event_id:id,user_id:cUser.id},{onConflict:'event_id,user_id'});closeGenModal();showToast('RSVP confirmed! See you there!');}}
+async function bookEvt(id,isPaid){
+  if(!cUser){openAuth('login');return;}
+  const evt=allEvts.find(x=>x.id===id);
+  if(!evt)return;
+  if(isEventOwner(evt)){openEventCheckin(id);return;}
+  if(isPaid){openEventCheckout(id);return;}
+  const{error}=await db.from('event_rsvps').upsert({event_id:id,user_id:cUser.id},{onConflict:'event_id,user_id'});
+  if(error){showToast('Error: '+normalizeDbError(error));return;}
+  closeGenModal();showToast('RSVP confirmed! See you there!');
+}
+
+function openEventCheckout(id){
+  const evt=allEvts.find(x=>x.id===id);if(!evt)return;
+  const qty=1,t=eventFeeTotals(evt.ticket_price,qty);
+  document.getElementById('gen-content').innerHTML=`<div class="mh">Event Checkout &#x1F39F;</div><div class="msub">Secure in-app ticket payment for ${evt.title}</div><div class="err-box" id="evt-checkout-err"></div><div style="background:var(--off);border:1px solid var(--border);border-radius:var(--rl);padding:16px;margin-bottom:16px"><div style="font-family:'Cormorant Garamond',serif;font-size:1.25rem;font-weight:700;color:var(--navy)">${evt.title}</div><div style="font-size:.76rem;color:var(--soft);margin-top:4px">${new Date(evt.event_date).toLocaleDateString()} ${evt.event_time||''} · ${evt.venue}, ${evt.city}</div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div class="fg"><label class="lbl">Quantity</label><input class="inp" id="evt-ticket-qty" type="number" min="1" max="10" value="${qty}" oninput="updateEventCheckoutTotals('${evt.id}')"/></div><div class="fg"><label class="lbl">Delivery</label><select class="inp" id="evt-ticket-delivery" onchange="toggleEventDeliveryField()"><option value="email">Email</option><option value="sms">SMS</option></select></div></div><div class="fg"><label class="lbl" id="evt-delivery-label">Send To Email</label><input class="inp" id="evt-delivery-dest" value="${cUser.email||''}" placeholder="you@example.com"/></div><div style="background:#fff;border:1px solid var(--border);border-radius:var(--rl);padding:16px;margin-bottom:14px"><div style="display:flex;justify-content:space-between;font-size:.82rem;color:var(--mid);margin-bottom:8px"><span>Tickets</span><strong id="evt-subtotal">${money(t.subtotal)}</strong></div><div style="display:flex;justify-content:space-between;font-size:.82rem;color:var(--mid);margin-bottom:8px"><span>Afrikonnect service fee (3%)</span><strong id="evt-service-fee">${money(t.serviceFee)}</strong></div><div style="display:flex;justify-content:space-between;font-size:.82rem;color:var(--mid);margin-bottom:8px"><span>Card processing</span><strong id="evt-card-fee">${money(t.cardFee)}</strong></div><div style="display:flex;justify-content:space-between;font-size:.95rem;color:var(--navy);font-weight:800"><span>Total</span><strong id="evt-total">${money(t.total)}</strong></div></div><div class="fg"><label class="lbl">Card Number</label><input class="inp" id="evt-card-num" placeholder="1234 5678 9012 3456" maxlength="19" oninput="fmtCard(this)"/></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div class="fg"><label class="lbl">Expiry</label><input class="inp" id="evt-card-exp" placeholder="MM/YY" maxlength="5" oninput="fmtExp(this)"/></div><div class="fg"><label class="lbl">CVV</label><input class="inp" id="evt-card-cvv" placeholder="123" maxlength="4" oninput="this.value=this.value.replace(/[^0-9]/g,'')"/></div></div><div class="fg"><label class="lbl">Cardholder Name</label><input class="inp" id="evt-card-name" placeholder="Full name on card" value="${cProf?.full_name||''}"/></div><div class="secure-note">&#x1F512; Unique QR issued per ticket · One-time check-in only · Payment stays on Afrikonnect</div><button class="btn btn-gold btn-full" onclick="purchaseEventTickets('${evt.id}')" id="evt-purchase-btn">Pay ${money(t.total)} &amp; Generate QR Tickets</button>`;
+  document.getElementById('gen-overlay').classList.add('open');
+}
+function toggleEventDeliveryField(){
+  const mode=document.getElementById('evt-ticket-delivery')?.value||'email',label=document.getElementById('evt-delivery-label'),input=document.getElementById('evt-delivery-dest');
+  if(label)label.textContent=mode==='sms'?'Send To Phone':'Send To Email';
+  if(input){
+    input.placeholder=mode==='sms'?'+1 (555) 000-0000':'you@example.com';
+    if(!input.value)input.value=mode==='sms'?(cProf?.phone||''):(cUser?.email||'');
+  }
+}
+function updateEventCheckoutTotals(id){
+  const evt=allEvts.find(x=>x.id===id);if(!evt)return;
+  const qty=Math.max(1,Math.min(10,parseInt(document.getElementById('evt-ticket-qty')?.value||'1',10)||1)),t=eventFeeTotals(evt.ticket_price,qty);
+  document.getElementById('evt-ticket-qty').value=qty;
+  document.getElementById('evt-subtotal').textContent=money(t.subtotal);
+  document.getElementById('evt-service-fee').textContent=money(t.serviceFee);
+  document.getElementById('evt-card-fee').textContent=money(t.cardFee);
+  document.getElementById('evt-total').textContent=money(t.total);
+  document.getElementById('evt-purchase-btn').innerHTML='Pay '+money(t.total)+' &amp; Generate QR Tickets';
+}
+async function purchaseEventTickets(id){
+  const evt=allEvts.find(x=>x.id===id);if(!evt)return;
+  const errEl=document.getElementById('evt-checkout-err'),btn=document.getElementById('evt-purchase-btn'),qty=Math.max(1,Math.min(10,parseInt(document.getElementById('evt-ticket-qty')?.value||'1',10)||1)),delivery=document.getElementById('evt-ticket-delivery')?.value||'email',dest=document.getElementById('evt-delivery-dest')?.value?.trim(),num=document.getElementById('evt-card-num')?.value?.replace(/\s/g,''),exp=document.getElementById('evt-card-exp')?.value,cvv=document.getElementById('evt-card-cvv')?.value,name=document.getElementById('evt-card-name')?.value?.trim();
+  if(!dest){errEl.textContent='Choose where the ticket should be delivered.';errEl.classList.add('show');return;}
+  if(delivery==='email'&&!/@/.test(dest)){errEl.textContent='Enter a valid email address.';errEl.classList.add('show');return;}
+  if(delivery==='sms'&&!/\d{10,}/.test(dest.replace(/\D/g,''))){errEl.textContent='Enter a valid phone number for SMS delivery.';errEl.classList.add('show');return;}
+  if(!num||num.length<15||!exp||!cvv||!name){errEl.textContent='Please fill in all card details.';errEl.classList.add('show');return;}
+  const totals=eventFeeTotals(evt.ticket_price,qty);
+  btn.innerHTML='<span class="spin"></span> Processing ticket payment...';btn.disabled=true;
+  try{
+    const{data:order,error:orderError}=await db.from('event_ticket_orders').insert({event_id:id,customer_id:cUser.id,quantity:qty,subtotal:totals.subtotal,service_fee:totals.serviceFee,card_processing_fee:totals.cardFee,total:totals.total,payment_method:'card',delivery_channel:delivery,delivery_destination:dest,status:'paid'}).select().single();
+    if(orderError)throw orderError;
+    const tickets=Array.from({length:qty},(_,i)=>{const token=makeTicketToken();return{order_id:order.id,event_id:id,customer_id:cUser.id,ticket_token:token,qr_payload:buildTicketPayload(token),qr_url:buildTicketQrUrl(token),status:'active',delivery_channel:delivery,delivery_destination:dest,sequence_number:i+1};});
+    const{data:created,error:ticketError}=await db.from('event_tickets').insert(tickets).select();
+    if(ticketError)throw ticketError;
+    eventTicketCache=created||tickets;
+    closeGenModal();
+    openTicketWallet(order.id);
+    showToast('Tickets purchased. Unique QR codes generated.');
+  }catch(err){
+    errEl.textContent='Error: '+normalizeDbError(err);errEl.classList.add('show');
+  }finally{
+    btn.innerHTML='Pay '+money(totals.total)+' &amp; Generate QR Tickets';btn.disabled=false;
+  }
+}
+async function openTicketWallet(orderId=null){
+  if(!cUser){openAuth('login');return;}
+  const q=db.from('event_tickets').select('*,events(title,event_date,event_time,venue,city,state,host_id,organizer_id)').eq('customer_id',cUser.id).order('created_at',{ascending:false});
+  const{data,error}=orderId?await q.eq('order_id',orderId):await q;
+  if(error){showToast('Error: '+normalizeDbError(error));return;}
+  eventTicketCache=data||[];
+  const body=!eventTicketCache.length?'<div style="text-align:center;padding:34px;color:var(--soft)"><div style="font-size:2.4rem;margin-bottom:10px">&#x1F39F;</div><div style="font-weight:700;color:var(--navy)">No tickets yet</div><div style="font-size:.8rem;margin-top:6px">Paid event tickets will appear here with their QR codes.</div></div>':eventTicketCache.map(t=>{const e=t.events||{},used=!!t.consumed_at,status=ticketStatusLabel(t);return `<div style="border:1px solid var(--border);border-radius:18px;padding:16px;margin-bottom:14px;background:${used?'#F8F4F0':'#fff'}"><div style="display:grid;grid-template-columns:120px 1fr;gap:14px;align-items:center"><div style="background:#fff;border:1px solid var(--border);border-radius:14px;padding:8px;text-align:center"><img src="${t.qr_url||buildTicketQrUrl(t.ticket_token)}" alt="Ticket QR" style="width:100%;aspect-ratio:1/1;object-fit:contain"/><div style="font-size:.62rem;color:var(--soft);margin-top:6px">Scan once at entry</div></div><div><div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start"><div><div style="font-family:'Cormorant Garamond',serif;font-size:1.15rem;font-weight:700;color:var(--navy)">${e.title||'Event Ticket'}</div><div style="font-size:.74rem;color:var(--soft);margin-top:4px">${e.event_date?new Date(e.event_date).toLocaleDateString():'TBA'} ${e.event_time||''} · ${e.venue||''}, ${e.city||''}</div></div><div style="font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:${used?'#B45309':'#166534'}">${status}</div></div><div style="margin-top:12px;font-size:.74rem;color:var(--mid)">Ticket Code: <strong style="color:var(--navy)">${t.ticket_token}</strong></div><div style="font-size:.73rem;color:var(--soft);margin-top:4px">Delivery: ${(t.delivery_channel||'email').toUpperCase()} to ${t.delivery_destination||cUser.email||''}</div>${used?`<div style="font-size:.73rem;color:#92400E;margin-top:6px">Checked in ${new Date(t.consumed_at).toLocaleString()}</div>`:''}<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px"><button class="btn btn-outline btn-sm" onclick="copyTicketCode('${t.ticket_token}')">Copy Code</button><button class="btn btn-outline-gold btn-sm" onclick="sendTicketEmail('${t.id}')">Send by Email</button><button class="btn btn-gold btn-sm" onclick="sendTicketSms('${t.id}')">Send by SMS</button></div></div></div></div>`;}).join('');
+  document.getElementById('gen-content').innerHTML=`<div class="mh">My Tickets &#x1F39F;</div><div class="msub">Each QR code is unique to one purchased ticket and becomes invalid after the first successful scan.</div>${body}<div style="font-size:.72rem;color:var(--soft);margin-top:12px">Automatic delivery still requires your SMTP and SMS providers. The buttons below open email or SMS drafts from the customer device.</div>`;
+  document.getElementById('gen-overlay').classList.add('open');
+}
+function getTicketById(id){return eventTicketCache.find(t=>t.id===id);}
+function copyTicketCode(token){navigator.clipboard?.writeText(buildTicketPayload(token));showToast('Ticket code copied.');}
+function sendTicketEmail(id){
+  const t=getTicketById(id);if(!t)return;const e=t.events||{},to=encodeURIComponent(t.delivery_channel==='email'?(t.delivery_destination||cUser?.email||''):(cUser?.email||'')),subject=encodeURIComponent('Your Afrikonnect ticket for '+(e.title||'Event')),body=encodeURIComponent(`Your ticket for ${e.title||'the event'}\nDate: ${e.event_date?new Date(e.event_date).toLocaleDateString():'TBA'} ${e.event_time||''}\nVenue: ${e.venue||''}, ${e.city||''}, ${e.state||''}\nTicket code: ${t.ticket_token}\nQR payload: ${t.qr_payload||buildTicketPayload(t.ticket_token)}\nThis QR code can only be used once at check-in.`);
+  window.location.href='mailto:'+to+'?subject='+subject+'&body='+body;
+}
+function sendTicketSms(id){
+  const t=getTicketById(id);if(!t)return;const e=t.events||{},to=encodeURIComponent(t.delivery_channel==='sms'?(t.delivery_destination||cProf?.phone||''):(cProf?.phone||'')),body=encodeURIComponent(`${e.title||'Event'} ticket ${t.ticket_token}. QR payload: ${t.qr_payload||buildTicketPayload(t.ticket_token)}. One-time use only.`);
+  window.location.href='sms:'+to+'?body='+body;
+}
+async function openEventCheckin(eventId){
+  const evt=allEvts.find(x=>x.id===eventId);if(!evt||!isEventOwner(evt)){showToast('Only the event organizer can check in guests.');return;}
+  const{data,error}=await db.from('event_tickets').select('id,status,consumed_at').eq('event_id',eventId);
+  if(error){showToast('Error: '+normalizeDbError(error));return;}
+  const sold=(data||[]).length,used=(data||[]).filter(t=>t.consumed_at).length;
+  document.getElementById('gen-content').innerHTML=`<div class="mh">Check In Guests &#x1F4F7;</div><div class="msub">${evt.title}</div><div class="err-box" id="scan-err"></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px"><div style="background:var(--off);border:1px solid var(--border);border-radius:14px;padding:14px"><div style="font-size:.68rem;color:var(--soft);text-transform:uppercase;letter-spacing:.08em">Tickets Issued</div><div style="font-family:'Cormorant Garamond',serif;font-size:2rem;font-weight:700;color:var(--navy)">${sold}</div></div><div style="background:var(--off);border:1px solid var(--border);border-radius:14px;padding:14px"><div style="font-size:.68rem;color:var(--soft);text-transform:uppercase;letter-spacing:.08em">Already Used</div><div style="font-family:'Cormorant Garamond',serif;font-size:2rem;font-weight:700;color:#92400E">${used}</div></div></div><div id="ticket-scan-result" style="display:none;border-radius:14px;padding:14px;margin-bottom:12px"></div><div style="background:#fff;border:1px solid var(--border);border-radius:18px;padding:14px;margin-bottom:12px"><video id="ticket-scan-video" playsinline autoplay muted style="display:none;width:100%;border-radius:12px;background:#0b1628"></video><div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px"><button class="btn btn-outline-gold btn-sm" onclick="startTicketScanner('${eventId}')">Start Camera Scan</button><button class="btn btn-outline btn-sm" onclick="stopTicketScanner()">Stop Camera</button></div><div class="fg" style="margin-bottom:10px"><label class="lbl">Paste QR Payload or Ticket Code</label><input class="inp" id="ticket-scan-input" placeholder="AFRIKONNECT-TICKET:ABC123..."/></div><button class="btn btn-gold btn-full" onclick="manualCheckInTicket('${eventId}')">Validate Ticket</button></div><div style="font-size:.72rem;color:var(--soft)">The first valid scan marks the ticket as used. Any later scan of the same code is rejected.</div>`;
+  document.getElementById('gen-overlay').classList.add('open');
+}
+async function manualCheckInTicket(eventId){const raw=document.getElementById('ticket-scan-input')?.value||'';await validateEventTicketScan(eventId,raw);}
+function showTicketScanResult(ok,msg){
+  const box=document.getElementById('ticket-scan-result');if(!box)return;
+  box.style.display='block';box.style.background=ok?'#ECFDF5':'#FEF2F2';box.style.border='1px solid '+(ok?'#86EFAC':'#FECACA');box.style.color=ok?'#166534':'#991B1B';box.innerHTML=msg;
+}
+async function validateEventTicketScan(eventId,raw){
+  const token=extractTicketToken(raw);if(!token){showTicketScanResult(false,'Enter a valid ticket code or QR payload.');return;}
+  const evt=allEvts.find(x=>x.id===eventId);if(!evt||!isEventOwner(evt)){showTicketScanResult(false,'Only the event organizer can check in guests.');return;}
+  const{data:ticket,error}=await db.from('event_tickets').select('*').eq('event_id',eventId).eq('ticket_token',token).maybeSingle();
+  if(error){showTicketScanResult(false,'Lookup failed: '+normalizeDbError(error));return;}
+  if(!ticket){showTicketScanResult(false,'Ticket not found for this event.');return;}
+  if(ticket.consumed_at){showTicketScanResult(false,'This ticket was already used on '+new Date(ticket.consumed_at).toLocaleString()+'.');return;}
+  const{error:updateError}=await db.from('event_tickets').update({consumed_at:new Date().toISOString(),consumed_by:cUser.id,status:'used'}).eq('id',ticket.id).is('consumed_at',null);
+  if(updateError){showTicketScanResult(false,'Check-in failed: '+normalizeDbError(updateError));return;}
+  showTicketScanResult(true,'Ticket accepted. Entry granted for code <strong>'+ticket.ticket_token+'</strong>.');
+}
+async function startTicketScanner(eventId){
+  const errEl=document.getElementById('scan-err'),video=document.getElementById('ticket-scan-video');
+  if(!video)return;
+  if(!('BarcodeDetector' in window)){errEl.textContent='Camera QR scanning is not supported in this browser. Paste the ticket code instead.';errEl.classList.add('show');return;}
+  try{
+    ticketScannerDetector=new BarcodeDetector({formats:['qr_code']});
+    ticketScannerStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+    ticketScanEventId=eventId;
+    video.srcObject=ticketScannerStream;
+    video.style.display='block';
+    ticketScannerActive=true;
+    const scan=async()=>{
+      if(!ticketScannerActive||!video.srcObject)return;
+      try{
+        const codes=await ticketScannerDetector.detect(video);
+        if(codes?.length){
+          document.getElementById('ticket-scan-input').value=codes[0].rawValue||'';
+          await validateEventTicketScan(ticketScanEventId,codes[0].rawValue||'');
+          stopTicketScanner();
+          return;
+        }
+      }catch{}
+      requestAnimationFrame(scan);
+    };
+    requestAnimationFrame(scan);
+  }catch(err){
+    errEl.textContent='Unable to start camera scan: '+err.message;errEl.classList.add('show');
+  }
+}
+function stopTicketScanner(){
+  ticketScannerActive=false;
+  if(ticketScannerStream){ticketScannerStream.getTracks().forEach(t=>t.stop());ticketScannerStream=null;}
+  const video=document.getElementById('ticket-scan-video');if(video){video.pause?.();video.srcObject=null;video.style.display='none';}
+}
 
 function openPostEvt(){
   if(!cUser){openAuth('login');return;}
@@ -1381,7 +1534,7 @@ function openAuth(type){
   document.getElementById('auth-overlay').classList.add('open');
 }
 function closeAuthModal(){document.getElementById('auth-overlay').classList.remove('open');}
-function closeGenModal(){document.getElementById('gen-overlay').classList.remove('open');}
+function closeGenModal(){stopTicketScanner();document.getElementById('gen-overlay').classList.remove('open');}
 function closeIdModal(){document.getElementById('id-overlay').classList.remove('open');}
 document.getElementById('auth-overlay').addEventListener('click',e=>{if(e.target===document.getElementById('auth-overlay'))closeAuthModal();});
 document.getElementById('gen-overlay').addEventListener('click',e=>{if(e.target===document.getElementById('gen-overlay'))closeGenModal();});
