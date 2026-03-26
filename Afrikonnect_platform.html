@@ -1077,6 +1077,7 @@ function normalizeDbError(err){
   const msg=raw.toLowerCase();
   if(!raw)return 'Something went wrong. Please try again.';
   if(msg.includes('could not find the')&&msg.includes('event_time')&&msg.includes('events'))return 'Your Supabase events table is missing the event_time column. Run 5_events_schema_repair.sql in Supabase SQL Editor, then try again.';
+  if(msg.includes('organizer_id')&&msg.includes('events')&&msg.includes('not-null'))return 'Your Supabase events table still requires organizer_id. Run 6_events_organizer_repair.sql in Supabase SQL Editor, then try again.';
   return raw;
 }
 async function ensureAccountSetup(){
@@ -1289,7 +1290,7 @@ async function submitEvt(){
   const title=document.getElementById('evt-title')?.value?.trim(),date=document.getElementById('evt-date')?.value,venue=document.getElementById('evt-venue')?.value?.trim(),city=document.getElementById('evt-city')?.value?.trim(),state=document.getElementById('evt-state')?.value;
   const errEl=document.getElementById('evt-err');
   if(!title||!date||!venue||!city||!state){errEl.textContent='Please fill in all required fields';errEl.classList.add('show');return;}
-  const{error}=await db.from('events').insert({title,category:document.getElementById('evt-cat').value,event_date:date,event_time:document.getElementById('evt-time').value,ticket_price:parseFloat(document.getElementById('evt-price').value)||0,venue,city,state,description:document.getElementById('evt-desc').value.trim(),host_id:cUser.id,is_featured:document.getElementById('evt-plan').value==='paid',business_id:cBiz?.id||null});
+  const{error}=await db.from('events').insert({title,category:document.getElementById('evt-cat').value,event_date:date,event_time:document.getElementById('evt-time').value,ticket_price:parseFloat(document.getElementById('evt-price').value)||0,venue,city,state,description:document.getElementById('evt-desc').value.trim(),host_id:cUser.id,organizer_id:cUser.id,is_featured:document.getElementById('evt-plan').value==='paid',business_id:cBiz?.id||null});
   if(error){errEl.textContent='Error: '+normalizeDbError(error);errEl.classList.add('show');return;}
   closeGenModal();await loadEvts();showToast(document.getElementById('evt-plan')?.value==='paid'?'Event posted as Featured!':'Event posted!');
 }
